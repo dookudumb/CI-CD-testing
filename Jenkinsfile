@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18' // Use a Docker image based on your tech stack
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Bind Docker for access
+        }
+    }
     stages {
         stage('Build') {
             steps {
@@ -8,12 +13,13 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh 'docker run --rm myapp:latest npm test'
+                sh 'docker run --rm myapp:latest npm test' // Replace with your test command
             }
         }
         stage('Deploy') {
             steps {
-                sh 'docker push myapp:latest'
+                sh 'docker tag myapp:latest uat-machine:5000/myapp:latest'
+                sh 'docker push uat-machine:5000/myapp:latest'
             }
         }
     }
