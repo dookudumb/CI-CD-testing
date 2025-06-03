@@ -1,18 +1,48 @@
-name: Docker Image CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build -t my-app:${{ github.sha }} .
+  
+  test:
+    needs: build
+    runs-on: [Your_Testing_Machine]
+    steps:
+      - name: Pull Docker Image
+        run: |
+          docker pull my-app:${{ github.sha }}
+          docker run -d -p 8080:8080 my-app:${{ github.sha }}
+          
+      - name: Run Tests
+        run: |
+          ./run-tests.sh
+
+  deploy:
+    needs: test
+    runs-on: [Your_Deploy_Machine]
+    steps:
+      - name: Deploy to Environment
+        run: |
+          docker pull my-app:${{ github.sha }}
+          docker run -d -p 80:80 my-app:${{ github.sha }}
+
+  UAT:
+    needs: deploy
+    runs-on: [Your_UAT_Machine]
+    steps:
+      - name: Deploy to UAT
+        run: |
+          docker pull my-app:${{ github.sha }}
+          docker run -d -p 80:80 my-app:${{ github.sha }}
